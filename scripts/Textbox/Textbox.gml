@@ -41,10 +41,14 @@ function Textbox(_font, _width, _height) constructor
     __updateCallback        = -1;
     __focusOnCursorCallback = -1;
     
+    __focus          = false;
     __cursorPos      = -1;
     __highlightStart = -1;
     __highlightEnd   = -1;
     __canType        = true;
+    
+    __returnBehavior = 0;
+    __returnPressed  = false;
     
     __mouseOver     = false;
     __mousePressed  = false;
@@ -77,6 +81,13 @@ function Textbox(_font, _width, _height) constructor
         if (_update) __Update();
     }
     
+    static AppendContent = function(_content, _update = true)
+    {
+        __content += _content;
+        if (_update) __Update();
+        __scrollY = max(0, __contentHeight - __height);
+    }
+    
     static GetCanType = function()
     {
         return __canType;
@@ -87,11 +98,26 @@ function Textbox(_font, _width, _height) constructor
         __canType = _state;
     }
     
+    static SetReturnBehavior = function(_behavior)
+    {
+        __returnBehavior = _behavior;
+    }
+    
+    static GetReturnBehavior = function()
+    {
+        return __returnBehavior;
+    }
+    
+    static GetReturnPressed = function()
+    {
+        return __returnPressed;
+    }
+    
     static Unfocus = function()
     {
-        __cursorPos = -1;
+        __focus = false;
         
-        __highlightStart =  9999;
+        __highlightStart = 9999;
         __highlightEnd   = -9999;
     }
     
@@ -140,19 +166,24 @@ function Textbox(_font, _width, _height) constructor
 
         __mousePressed  = false;
         __mouseReleased = false;
+        __returnPressed = false;
 
         __mouseOver = point_in_rectangle(_mouseX, _mouseY, _x, _y, _x + __width, _y + __height);
 
         if (_mouseState)
         {
-            if (!__mouseDown && __mouseOver)
+            if (!__mouseDown)
             {
-                __mousePressed = true;
-                __mouseDown = true;
-            }
-            else if (!__mouseOver)
-            {
-                Unfocus();
+                if (__mouseOver)
+                {
+                    __mousePressed = true;
+                    __mouseDown = true;
+                    __focus = true;
+                }
+                else
+                {
+                    Unfocus();
+                }
             }
         }
         else
@@ -194,7 +225,7 @@ function Textbox(_font, _width, _height) constructor
         }
 
         var _repeat_fire = false;
-        if ((_keyboardKey != __keyHeld) || (__cursorPos < 0) || os_is_paused())
+        if ((_keyboardKey != __keyHeld) || (__cursorPos < 0) || (not __focus) || os_is_paused())
         {
             __keyHeld         = undefined;
             __keyRepeat       = false;
@@ -213,7 +244,7 @@ function Textbox(_font, _width, _height) constructor
             }
         }
 
-        if ((__cursorPos >= 0) && (keyboard_check_pressed(vk_anykey) || _repeat_fire))
+        if ((__cursorPos >= 0) && __focus && (keyboard_check_pressed(vk_anykey) || _repeat_fire))
         {
             var _validInput         = true;
             var _overwriteHighlight = false;
@@ -339,14 +370,36 @@ function Textbox(_font, _width, _height) constructor
                         case vk_enter:
                             if (__canType)
                             {
-                                __content = string_insert(chr(13), __content, __cursorPos + 1);
-                                ++__cursorPos;
-                                _update = true;
+                                switch(__returnBehavior)
+                                {
+                                    case 0:
+                                        __content = string_insert(chr(13), __content, __cursorPos + 1);
+                                        ++__cursorPos;
+                                        _update = true;
+                                    break;
+                                    
+                                    case 1:
+                                        if (keyboard_check(vk_shift))
+                                        {
+                                            __content = string_insert(chr(13), __content, __cursorPos + 1);
+                                            ++__cursorPos;
+                                            _update = true;
+                                        }
+                                        else
+                                        {
+                                            __returnPressed = true;
+                                        }
+                                    break;
+                                    
+                                    case 2:
+                                        __returnPressed = true;
+                                    break;
+                                }
                             }
                         break;
                 
                         case vk_up:
-                            if (__cursorPos >= 0)
+                            if ((__cursorPos >= 0) && __focus)
                             {
                                 var _charStruct = __characterArray[__cursorPos];
                                 var _offset = _charStruct.__width div 2;
@@ -357,7 +410,7 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         case vk_down:
-                            if (__cursorPos >= 0)
+                            if ((__cursorPos >= 0) && __focus)
                             {
                                 var _charStruct = __characterArray[__cursorPos];
                                 var _offset = _charStruct.__width div 2;
@@ -368,7 +421,7 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         case vk_home:
-                            if (__cursorPos >= 0)
+                            if ((__cursorPos >= 0) && __focus)
                             {
                                 var _charStruct = __characterArray[__cursorPos];
                                 var _newChar = __GetCharacterAt(0, _charStruct.__y + (__lineHeight div 2));
@@ -377,7 +430,7 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         case vk_end:
-                            if (__cursorPos >= 0)
+                            if ((__cursorPos >= 0) && __focus)
                             {
                                 var _charStruct = __characterArray[__cursorPos];
                                 var _newChar = __GetCharacterAt(__contentWidth + 999, _charStruct.__y + (__lineHeight div 2));
@@ -386,7 +439,7 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         case vk_pagedown:
-                            if (__cursorPos >= 0)
+                            if ((__cursorPos >= 0) && __focus)
                             {
                                 var _charStruct = __characterArray[__cursorPos];
                                 var _offset = _charStruct.__width div 2;
@@ -397,7 +450,7 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         case vk_pageup:
-                            if (__cursorPos >= 0)
+                            if ((__cursorPos >= 0) && __focus)
                             {
                                 var _charStruct = __characterArray[__cursorPos];
                                 var _offset = _charStruct.__width div 2;
@@ -539,7 +592,7 @@ function Textbox(_font, _width, _height) constructor
                 }
                 else
                 {
-                    if (__cursorPos == _i) __VertexBufferAddRect(_vbuff, _charX - 1, _charY, _charX, _charY + __lineHeight, __colourText, 1.0);
+                    if ((__cursorPos == _i) && __focus) __VertexBufferAddRect(_vbuff, _charX - 1, _charY, _charX, _charY + __lineHeight, __colourText, 1.0);
                     
                     if (_charLine < array_length(__lineColourArray))
                     {
@@ -595,6 +648,8 @@ function Textbox(_font, _width, _height) constructor
         var _cursorT = 0;
         var _cursorR = 0;
         var _cursorB = __lineHeight;
+        
+        __focus = true;
         
         if ((__cursorPos >= 0) && (__cursorPos < array_length(__characterArray)))
         {
