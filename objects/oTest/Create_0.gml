@@ -1,7 +1,9 @@
 x = 20;
 y = 20;
 
-outputBox = new Textbox(fntConsolas, room_width - 40, (room_height - 60)/2);
+y2 = y + 605;
+
+outputBox = new Textbox(fntConsolas, room_width-40, y2 - y - 20);
 
 outputBox.SetContent(@"
 ’Twas brillig, and the slithy toves
@@ -21,3 +23,6 @@ So rested he by the Tumtum tree
 ");
 
 outputBox.SetCanType(false);
+
+inputBox = new Textbox(fntConsolas, room_width-40, room_height - y2 - 20);
+inputBox.SetReturnBehavior(1);
