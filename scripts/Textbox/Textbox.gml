@@ -8,80 +8,81 @@
 
 function Textbox(_font, _width, _height) constructor
 {
-    static _vertex_format = undefined;
-    if (_vertex_format == undefined)
+    static _vertexFormat = undefined;
+    if (_vertexFormat == undefined)
     {
         vertex_format_begin();
         vertex_format_add_position_3d();
         vertex_format_add_colour();
         vertex_format_add_texcoord();
-        _vertex_format = vertex_format_end();
+        _vertexFormat = vertex_format_end();
     }
+    
+    
     
     __font   = _font;
     __width  = _width;
     __height = _height;
     
-    __scroll_x = 0;
-    __scroll_y = 0;
+    __scrollX = 0;
+    __scrollY = 0;
     
-    __content           = "";
-    __content_width     = 0;
-    __content_height    = 0;
-    __character_array   = array_create(0);
-    __line_colour_array = array_create(0);
+    __content         = "";
+    __contentWidth    = 0;
+    __contentHeight   = 0;
+    __characterArray  = array_create(0);
+    __lineColourArray = array_create(0);
     
-    __colour_background = $262626;
-    __colour_border     = c_white;
-    __colour_text       = c_white;
-    __border_thickness  = 2;
-    __padding           = 3;
+    __colourBackground = $262626;
+    __colourBorder     = c_white;
+    __colourText       = c_white;
+    __borderThickness  = 2;
+    __padding          = 3;
     
-    __update_callback          = -1;
-    __focus_on_cursor_callback = -1;
+    __updateCallback        = -1;
+    __focusOnCursorCallback = -1;
     
-    __cursor_pos      = -1;
-    __highlight_start = -1;
-    __highlight_end   = -1;
+    __cursorPos      = -1;
+    __highlightStart = -1;
+    __highlightEnd   = -1;
     
-    __mouse_over       = false;
-    __mouse_pressed    = false;
-    __mouse_released   = false;
-    __mouse_down       = false;
+    __mouseOver     = false;
+    __mousePressed  = false;
+    __mouseReleased = false;
+    __mouseDown     = false;
     
-    __key_held         = undefined;
-    __key_repeat       = false;
-    __key_pressed_time = -1;
-    __backspace        = false;
+    __keyHeld        = undefined;
+    __keyRepeat      = false;
+    __keyPressedTime = -1;
+    __backspace       = false;
     
     draw_set_font(__font);
-    __line_height = string_height(chr(13));
+    __lineHeight = string_height(chr(13));
     draw_set_font(-1);
     
     __Update();
     
     
     
-    enum COOLTOOL_CHARACTER
+    #region Public
+    
+    static GetContent = function()
     {
-        CHAR,
-        X,
-        Y,
-        WIDTH,
-        LINE,
-        __SIZE
+        return __content;
     }
     
-    
-    
-    #region Public
+    static SetContent = function(_content, _update = true)
+    {
+        __content = _content;
+        if (_update) __Update();
+    }
     
     static Unfocus = function()
     {
-        __cursor_pos = -1;
+        __cursorPos = -1;
     }
     
-    static InsertString = function(_string, _position = __cursor_pos+1, _update = true)
+    static InsertString = function(_string, _position = __cursorPos+1, _update = true)
     {
         if (_position >= 1)
         {
@@ -100,110 +101,110 @@ function Textbox(_font, _width, _height) constructor
             _string = string_replace_all(_string, chr( 894),   ";" ); //"Greek question mark" replacement
             
             __content = string_insert(_string, __content, _position);
-            __cursor_pos += string_length(_string);
+            __cursorPos += string_length(_string);
             if (_update) __Update();
         }
     }
     
-    static Step = function(___x, ___y, _mouse_x, _mouse_y, _mouse_state)
+    static Step = function(_x, _y, _mouseX, _mouseY, _mouseState)
     {
-        var _keyboard_key = keyboard_key;
+        var _keyboardKey = keyboard_key;
 
         if (os_is_paused())
         {
-            _mouse_state = false;
+            _mouseState = false;
             __backspace = false;
         }
         
         //Manually handle backspace to try to work around stuck backspace when refocusing the window
         if (keyboard_check_pressed(vk_backspace)) __backspace = true;
         if (!keyboard_check(vk_backspace)) __backspace = false;
-        if (__backspace) _keyboard_key = vk_backspace;
+        if (__backspace) _keyboardKey = vk_backspace;
 
         //These two flags control additional function calls at the end of this function
         var _update         = false;
-        var _old_cursor_pos = __cursor_pos;
+        var _oldCursorPos = __cursorPos;
 
-        __mouse_pressed  = false;
-        __mouse_released = false;
+        __mousePressed  = false;
+        __mouseReleased = false;
 
-        __mouse_over = point_in_rectangle(_mouse_x, _mouse_y, ___x, ___y, ___x + __width, ___y + __height);
+        __mouseOver = point_in_rectangle(_mouseX, _mouseY, _x, _y, _x + __width, _y + __height);
 
-        if (_mouse_state)
+        if (_mouseState)
         {
-            if (!__mouse_down && __mouse_over)
+            if (!__mouseDown && __mouseOver)
             {
-                __mouse_pressed = true;
-                __mouse_down = true;
+                __mousePressed = true;
+                __mouseDown = true;
         
                 //TODO - Unfocus all other textboxes
             }
         }
         else
         {
-            if (__mouse_down)
+            if (__mouseDown)
             {
-                __mouse_released = true;
-                __mouse_down = false;
+                __mouseReleased = true;
+                __mouseDown = false;
             }
         }
 
-        if (__mouse_down)
+        if (__mouseDown)
         {
-            __highlight_start =  9999;
-            __highlight_end   = -9999;
+            __highlightStart =  9999;
+            __highlightEnd   = -9999;
         }
 
-        if (__mouse_over && (__cursor_pos >= 0))
+        if (__mouseOver && (__cursorPos >= 0))
         {
-            __scroll_y += __line_height*(mouse_wheel_down() - mouse_wheel_up());
-            __scroll_y = clamp(__scroll_y, 0, max(0, __content_height - __height));
+            __scrollY += __lineHeight*(mouse_wheel_down() - mouse_wheel_up());
+            __scrollY = clamp(__scrollY, 0, max(0, __contentHeight - __height));
         }
 
-        var _character_at = __GetCharacterAt(_mouse_x + __scroll_x - ___x, _mouse_y + __scroll_y - ___y);
-        if (_character_at != undefined)
+        var _characterAt = __GetCharacterAt(_mouseX + __scrollX - _x, _mouseY + __scrollY - _y);
+        if (_characterAt != undefined)
         {
-            if (__mouse_pressed)
+            if (__mousePressed)
             {
-                __cursor_pos = _character_at;
+                __cursorPos = _characterAt;
             }
-            else if (__mouse_down)
+            else if (__mouseDown)
             {
-                if (_character_at != __cursor_pos)
+                if (_characterAt != __cursorPos)
                 {
-                    __highlight_start = min(__highlight_start, _character_at, __cursor_pos);
-                    __highlight_end   = max(__highlight_end  , _character_at, __cursor_pos);
+                    __highlightStart = min(__highlightStart, _characterAt, __cursorPos);
+                    __highlightEnd   = max(__highlightEnd,   _characterAt, __cursorPos);
                 }
             }
         }
 
         var _repeat_fire = false;
-        if ((_keyboard_key != __key_held) || (__cursor_pos < 0) || os_is_paused())
+        if ((_keyboardKey != __keyHeld) || (__cursorPos < 0) || os_is_paused())
         {
-            __key_held         = undefined;
-            __key_repeat       = false;
-            __key_pressed_time = -1;
+            __keyHeld         = undefined;
+            __keyRepeat       = false;
+            __keyPressedTime = -1;
         }
-        else if (__key_pressed_time >= 0)
+        else if (__keyPressedTime >= 0)
         {
-            if (__key_repeat)
+            if (__keyRepeat)
             {
-                if (current_time - __key_pressed_time > TEXTBOX_REPEAT_FREQUENCY) _repeat_fire = true;
+                if (current_time - __keyPressedTime > TEXTBOX_REPEAT_FREQUENCY) _repeat_fire = true;
             }
-            else if (current_time - __key_pressed_time > TEXTBOX_REPEAT_DELAY)
+            else if (current_time - __keyPressedTime > TEXTBOX_REPEAT_DELAY)
             {
-                __key_repeat = true;
+                __keyRepeat = true;
                 _repeat_fire = true;
             }
         }
 
-        if ((__cursor_pos >= 0) && (keyboard_check_pressed(vk_anykey) || _repeat_fire))
+        if ((__cursorPos >= 0) && (keyboard_check_pressed(vk_anykey) || _repeat_fire))
         {
-            var _valid_input         = true;
-            var _overwrite_highlight = false;
-            var _command_shortcut    = false;
+            var _validInput         = true;
+            var _overwriteHighlight = false;
+            var _commandShortcut    = false;
             
-            switch(_keyboard_key)
+            switch(_keyboardKey)
             {
                 case vk_tab:
                 case vk_shift:
@@ -215,7 +216,7 @@ function Textbox(_font, _width, _height) constructor
                 case vk_lalt:
                 case vk_ralt:
                     //Ignore these characters
-                    _valid_input = false;
+                    _validInput = false;
                 break;
         
                 case vk_up:
@@ -227,242 +228,260 @@ function Textbox(_font, _width, _height) constructor
                 case vk_pagedown:
                 case vk_pageup:
                     //Arrow keys disable highlighting
-                    __highlight_start =  9999;
-                    __highlight_end   = -9999;
+                    __highlightStart =  9999;
+                    __highlightEnd   = -9999;
                 break;
         
                 default:
-                    _overwrite_highlight = true;
+                    _overwriteHighlight = true;
                 break;
             }
     
             //Don't copy/paste/select repeatedly!
-            if (keyboard_check(vk_control) && (__key_held != _keyboard_key))
+            if (keyboard_check(vk_control) && (__keyHeld != _keyboardKey))
             {
-                _valid_input = false;
+                _validInput = false;
         
                 if (!keyboard_check(vk_shift))
                 {
                     if (keyboard_check_pressed(ord("V")))
                     {
                         //We handle pasting after we remove the highlighted section
-                        _overwrite_highlight = true;
+                        _overwriteHighlight = true;
+                    }
+                    else if (keyboard_check_pressed(ord("X")))
+                    {
+                        if (__highlightEnd - __highlightStart > 0)
+                        {
+                            var _start = __highlightStart + 1;
+                            var _end = min(string_length(__content) + 1, __highlightEnd + 1);
+                            var _string = string_copy(__content, __highlightStart + 1, _end - (__highlightStart + 1));
+                            clipboard_set_text(_string);
+                        }
+                        
+                        _overwriteHighlight = true;
                     }
                     else if (keyboard_check_pressed(ord("C")))
                     {
-                        if (__highlight_end - __highlight_start > 0)
+                        if (__highlightEnd - __highlightStart > 0)
                         {
-                            var _start = __highlight_start + 1;
-                            var _end = min(string_length(__content) + 1, __highlight_end + 1);
-                            var _string = string_copy(__content, __highlight_start + 1, _end - (__highlight_start + 1));
+                            var _start = __highlightStart + 1;
+                            var _end = min(string_length(__content) + 1, __highlightEnd + 1);
+                            var _string = string_copy(__content, __highlightStart + 1, _end - (__highlightStart + 1));
                             clipboard_set_text(_string);
                         }
                 
-                        _command_shortcut = true;
+                        _commandShortcut = true;
                     }
                     else if (keyboard_check_pressed(ord("A")))
                     {
-                        __highlight_start = 0;
-                        __highlight_end   = array_length(__character_array) - 1;
+                        __highlightStart = 0;
+                        __highlightEnd   = array_length(__characterArray) - 1;
                 
-                        _command_shortcut = true;
+                        _commandShortcut = true;
                     }
                 }
             }
     
-            if (!_command_shortcut)
+            if (!_commandShortcut)
             {
-                var _highlight_size = __highlight_end - __highlight_start;
-                if (_overwrite_highlight)
+                var _highlightSize = __highlightEnd - __highlightStart;
+                if (_overwriteHighlight)
                 {
-                    if ((__highlight_start >= 0) && (__highlight_end < array_length(__character_array)) && (_highlight_size > 0))
+                    if ((__highlightStart >= 0) && (__highlightEnd < array_length(__characterArray)) && (_highlightSize > 0))
                     {
-                        __content = string_delete(__content, __highlight_start + 1, _highlight_size);
+                        __content = string_delete(__content, __highlightStart + 1, _highlightSize);
                         _update = true;
                 
-                        __cursor_pos      = __highlight_start;
-                        __highlight_start =  9999;
-                        __highlight_end   = -9999;
+                        __cursorPos      = __highlightStart;
+                        __highlightStart =  9999;
+                        __highlightEnd   = -9999;
                 
-                        if ((_keyboard_key == vk_backspace) || (_keyboard_key == vk_delete)) _valid_input = false;
+                        if ((_keyboardKey == vk_backspace) || (_keyboardKey == vk_delete)) _validInput = false;
                     }
                 }
         
-                if (keyboard_check(vk_control) && (__key_held != _keyboard_key))
+                if (keyboard_check(vk_control) && (__keyHeld != _keyboardKey))
                 {
                     if (keyboard_check_pressed(ord("V"))) //ctrl+v pastes text
                     {
                         InsertString(clipboard_get_text(), undefined, false);
                         _update = true;
-                        _valid_input = false;
+                        _validInput = false;
+                    }
+                    else if (keyboard_check_pressed(ord("X"))) //ctrl+x cuts text
+                    {
+                        InsertString("", undefined, false);
+                        _update = true;
+                        _validInput = false;
                     }
                 }
         
-                if (_valid_input)
+                if (_validInput)
                 {
-                    switch(_keyboard_key)
+                    switch(_keyboardKey)
                     {
                         case vk_enter:
-                            __content = string_insert(chr(13), __content, __cursor_pos + 1);
-                            ++__cursor_pos;
+                            __content = string_insert(chr(13), __content, __cursorPos + 1);
+                            ++__cursorPos;
                             _update = true;
                         break;
                 
                         case vk_up:
-                            if (__cursor_pos >= 0)
+                            if (__cursorPos >= 0)
                             {
-                                var _char_array = __character_array[__cursor_pos];
-                                var _offset = _char_array[COOLTOOL_CHARACTER.WIDTH] div 2;
+                                var _charStruct = __characterArray[__cursorPos];
+                                var _offset = _charStruct.__width div 2;
                                 if (_offset > 100) _offset = 1;
-                                var _new_char = __GetCharacterAt(_char_array[COOLTOOL_CHARACTER.X] + _offset, _char_array[COOLTOOL_CHARACTER.Y] - (__line_height div 2));
-                                if (_new_char != undefined) __cursor_pos = _new_char;
+                                var _newChar = __GetCharacterAt(_charStruct.__x + _offset, _charStruct.__y - (__lineHeight div 2));
+                                if (_newChar != undefined) __cursorPos = _newChar;
                             }
                         break;
                 
                         case vk_down:
-                            if (__cursor_pos >= 0)
+                            if (__cursorPos >= 0)
                             {
-                                var _char_array = __character_array[__cursor_pos];
-                                var _offset = _char_array[COOLTOOL_CHARACTER.WIDTH] div 2;
+                                var _charStruct = __characterArray[__cursorPos];
+                                var _offset = _charStruct.__width div 2;
                                 if (_offset > 100) _offset = 1;
-                                var _new_char = __GetCharacterAt(_char_array[COOLTOOL_CHARACTER.X] + _offset, _char_array[COOLTOOL_CHARACTER.Y] + 3*(__line_height div 2));
-                                if (_new_char != undefined) __cursor_pos = _new_char;
+                                var _newChar = __GetCharacterAt(_charStruct.__x + _offset, _charStruct.__y + 3*(__lineHeight div 2));
+                                if (_newChar != undefined) __cursorPos = _newChar;
                             }
                         break;
                 
                         case vk_home:
-                            if (__cursor_pos >= 0)
+                            if (__cursorPos >= 0)
                             {
-                                var _char_array = __character_array[__cursor_pos];
-                                var _new_char = __GetCharacterAt(0, _char_array[COOLTOOL_CHARACTER.Y] + (__line_height div 2));
-                                if (_new_char != undefined) __cursor_pos = _new_char;
+                                var _charStruct = __characterArray[__cursorPos];
+                                var _newChar = __GetCharacterAt(0, _charStruct.__y + (__lineHeight div 2));
+                                if (_newChar != undefined) __cursorPos = _newChar;
                             }
                         break;
                 
                         case vk_end:
-                            if (__cursor_pos >= 0)
+                            if (__cursorPos >= 0)
                             {
-                                var _char_array = __character_array[__cursor_pos];
-                                var _new_char = __GetCharacterAt(__content_width + 999, _char_array[COOLTOOL_CHARACTER.Y] + (__line_height div 2));
-                                if (_new_char != undefined) __cursor_pos = _new_char;
+                                var _charStruct = __characterArray[__cursorPos];
+                                var _newChar = __GetCharacterAt(__contentWidth + 999, _charStruct.__y + (__lineHeight div 2));
+                                if (_newChar != undefined) __cursorPos = _newChar;
                             }
                         break;
                 
                         case vk_pagedown:
-                            if (__cursor_pos >= 0)
+                            if (__cursorPos >= 0)
                             {
-                                var _char_array = __character_array[__cursor_pos];
-                                var _offset = _char_array[COOLTOOL_CHARACTER.WIDTH] div 2;
+                                var _charStruct = __characterArray[__cursorPos];
+                                var _offset = _charStruct.__width div 2;
                                 if (_offset > 100) _offset = 1;
-                                var _new_char = __GetCharacterAt(_char_array[COOLTOOL_CHARACTER.X] + _offset, _char_array[COOLTOOL_CHARACTER.Y] + (__line_height div 2) + __height);
-                                if (_new_char != undefined) __cursor_pos = _new_char;
+                                var _newChar = __GetCharacterAt(_charStruct.__x + _offset, _charStruct.__y + (__lineHeight div 2) + __height);
+                                if (_newChar != undefined) __cursorPos = _newChar;
                             }
                         break;
                 
                         case vk_pageup:
-                            if (__cursor_pos >= 0)
+                            if (__cursorPos >= 0)
                             {
-                                var _char_array = __character_array[__cursor_pos];
-                                var _offset = _char_array[COOLTOOL_CHARACTER.WIDTH] div 2;
+                                var _charStruct = __characterArray[__cursorPos];
+                                var _offset = _charStruct.__width div 2;
                                 if (_offset > 100) _offset = 1;
-                                var _new_char = __GetCharacterAt(_char_array[COOLTOOL_CHARACTER.X] + _offset, _char_array[COOLTOOL_CHARACTER.Y] + (__line_height div 2) - __height);
-                                if (_new_char != undefined) __cursor_pos = _new_char;
+                                var _newChar = __GetCharacterAt(_charStruct.__x + _offset, _charStruct.__y + (__lineHeight div 2) - __height);
+                                if (_newChar != undefined) __cursorPos = _newChar;
                             }
                         break;
                 
                         case vk_left:
-                            __cursor_pos = max(0, __cursor_pos - 1);
+                            __cursorPos = max(0, __cursorPos - 1);
                         break;
                 
                         case vk_right:
-                            __cursor_pos = min(array_length(__character_array) - 1, __cursor_pos + 1);
+                            __cursorPos = min(array_length(__characterArray) - 1, __cursorPos + 1);
                         break;
                 
                         case vk_backspace:
-                            __content = string_delete(__content, __cursor_pos, 1);
-                            __cursor_pos = max(0, __cursor_pos - 1);
+                            __content = string_delete(__content, __cursorPos, 1);
+                            __cursorPos = max(0, __cursorPos - 1);
                             _update = true;
                         break;
                 
                         case vk_delete:
-                            __content = string_delete(__content, __cursor_pos + 1, 1);
+                            __content = string_delete(__content, __cursorPos + 1, 1);
                             _update = true;
                         break;
                 
                         default:
-                            var _last_char = keyboard_lastchar;
-                            if (_last_char == chr(8230)) _last_char = "..."; //Ellipsis replacement
+                            var _lastChar = keyboard_lastchar;
+                            if (_lastChar == chr(8230)) _lastChar = "..."; //Ellipsis replacement
                     
-                            __content = string_insert(keyboard_lastchar, __content, __cursor_pos + 1);
-                            ++__cursor_pos;
+                            __content = string_insert(keyboard_lastchar, __content, __cursorPos + 1);
+                            ++__cursorPos;
                             _update = true;
                         break;
                     }
                 }
             }
     
-            __key_held = _keyboard_key;
-            __key_pressed_time = current_time;
+            __keyHeld = _keyboardKey;
+            __keyPressedTime = current_time;
         }
 
         if (_update) __Update();
-        if (_old_cursor_pos != __cursor_pos) __FocusOnCursor();
+        if (_oldCursorPos != __cursorPos) __FocusOnCursor();
     }
     
-    static Draw = function(___x, ___y)
+    static Draw = function(_x, _y)
     {
-        matrix_set(matrix_world, matrix_build(___x, ___y, 0,   0,0,0,   1,1,1));
+        matrix_set(matrix_world, matrix_build(_x, _y, 0,   0,0,0,   1,1,1));
         
-        draw_set_colour(__colour_border);
-        draw_rectangle(-__padding - __border_thickness,
-                       -__padding - __border_thickness,
-                        __padding + __border_thickness + __width,
-                        __padding + __border_thickness + __height,
+        draw_set_colour(__colourBorder);
+        draw_rectangle(-__padding - __borderThickness,
+                       -__padding - __borderThickness,
+                        __padding + __borderThickness + __width,
+                        __padding + __borderThickness + __height,
                         false);
         
-        draw_set_colour(__colour_background);
+        draw_set_colour(__colourBackground);
         draw_rectangle(-__padding,
                        -__padding,
                         __padding + __width,
                         __padding + __height,
                         false);
         
-        if (__content_width > __width)
+        if (__contentWidth > __width)
         {
-            var _t = clamp(__scroll_x / (__content_width - __width), 0.0, 1.0);
-            var _x = lerp(5, __width - 5, _t);
+            var _t = clamp(__scrollX / (__contentWidth - __width), 0.0, 1.0);
+            var _scrolledX = lerp(5, __width - 5, _t);
             
-            draw_set_colour(__colour_border);
-            draw_rectangle(__border_thickness + _x - 2,
+            draw_set_colour(__colourBorder);
+            draw_rectangle(__borderThickness + _scrolledX - 2,
                            __padding - 4 + __height,
-                           __border_thickness + _x + 2,
-                           __padding + 4 + __border_thickness + __height,
+                           __borderThickness + _scrolledX + 2,
+                           __padding + 4 + __borderThickness + __height,
                            false);
         }
         
-        if (__content_height > __height)
+        if (__contentHeight > __height)
         {
-            var _t = clamp(__scroll_y / (__content_height - __height), 0.0, 1.0);
-            var _y = lerp(5, __height - 5, _t);
+            var _t = clamp(__scrollY / (__contentHeight - __height), 0.0, 1.0);
+            var _scrolledY = lerp(5, __height - 5, _t);
             
-            draw_set_colour(__colour_border);
+            draw_set_colour(__colourBorder);
             draw_rectangle(__padding - 4 + __width,
-                           __border_thickness + _y - 2,
-                           __padding + 4 + __border_thickness + __width,
-                           __border_thickness + _y + 2,
+                           __borderThickness + _scrolledY - 2,
+                           __padding + 4 + __borderThickness + __width,
+                           __borderThickness + _scrolledY + 2,
                            false);
         }
         
         matrix_set(matrix_world, matrix_multiply(matrix_get(matrix_world),
-                                                 matrix_build(-__scroll_x, -__scroll_y, 0,    0,0,0,   1,1,1)));
+                                                 matrix_build(-__scrollX, -__scrollY, 0,    0,0,0,   1,1,1)));
         
-        draw_set_colour(__colour_text);
+        draw_set_colour(__colourText);
         draw_set_font(__font);
-        __SetWindow(___x-1, ___y, ___x + __width, ___y + __height);
+        __SetWindow(_x-1, _y, _x + __width, _y + __height);
         
         //Create a vertex buffer for all the rectangles
         var _vbuff = vertex_create_buffer();
-        vertex_begin(_vbuff, _vertex_format);
+        vertex_begin(_vbuff, _vertexFormat);
         
         //Add in a degenerate triangle to stop GameMaker complaining about empty vertex buffers
         repeat(3)
@@ -473,35 +492,35 @@ function Textbox(_font, _width, _height) constructor
         }
         
         var _i = 0;
-        repeat(array_length(__character_array))
+        repeat(array_length(__characterArray))
         {
-            var _char_array = __character_array[_i];
+            var _charStruct = __characterArray[_i];
             
-            if (is_array(_char_array))
+            if (is_struct(_charStruct))
             {
-                var _char  = _char_array[COOLTOOL_CHARACTER.CHAR ];
-                var _x     = _char_array[COOLTOOL_CHARACTER.X    ];
-                var _y     = _char_array[COOLTOOL_CHARACTER.Y    ];
-                var _line  = _char_array[COOLTOOL_CHARACTER.LINE ];
-                var _width = _char_array[COOLTOOL_CHARACTER.WIDTH];
+                var _char      = _charStruct.__char;
+                var _charX     = _charStruct.__x;
+                var _charY     = _charStruct.__y;
+                var _charLine  = _charStruct.__line;
+                var _charWidth = _charStruct.__width;
                 
-                if ((_i >= __highlight_start) && (_i < __highlight_end))
+                draw_text(_charX, _charY, _char);
+                
+                if ((_i >= __highlightStart) && (_i < __highlightEnd))
                 {
-                    draw_text(_x, _y, _char);
-                    __VertexBufferAddRect(_vbuff, _x, _y, _x + _width, _y + __line_height, __colour_text, 0.3);
+                    __VertexBufferAddRect(_vbuff, _charX, _charY, _charX + _charWidth, _charY + __lineHeight, __colourText, 0.3);
                 }
                 else
                 {
-                    draw_text(_x, _y, _char);
-                    if (__cursor_pos == _i) __VertexBufferAddRect(_vbuff, _x - 1, _y, _x, _y + __line_height, __colour_text, 1.0);
+                    if (__cursorPos == _i) __VertexBufferAddRect(_vbuff, _charX - 1, _charY, _charX, _charY + __lineHeight, __colourText, 1.0);
                     
-                    if (_line < array_length(__line_colour_array))
+                    if (_charLine < array_length(__lineColourArray))
                     {
-                        var _line_colour = __line_colour_array[_line];
-                        if (_line_colour != c_black)
+                        var _lineColour = __lineColourArray[_charLine];
+                        if (_lineColour != c_black)
                         {
-                            __VertexBufferAddRect(_vbuff, _x, _y, _x + _width, _y + __line_height, _line_colour, 0.3);
-                            draw_set_colour(__colour_text);
+                            __VertexBufferAddRect(_vbuff, _charX, _charY, _charX + _charWidth, _charY + __lineHeight, _lineColour, 0.3);
+                            draw_set_colour(__colourText);
                         }
                     }
                 }
@@ -515,7 +534,7 @@ function Textbox(_font, _width, _height) constructor
         vertex_submit(_vbuff, pr_trianglelist, sprite_get_texture(__textboxWhitePixel, 0));
         vertex_delete_buffer(_vbuff);
         
-        //draw_rectangle(0, 0, __content_width, __content_height, true);
+        //draw_rectangle(0, 0, __contentWidth, __contentHeight, true);
         matrix_set(matrix_world, matrix_build_identity());
         draw_set_font(-1);
         draw_set_color(c_white);
@@ -530,72 +549,75 @@ function Textbox(_font, _width, _height) constructor
     
     static __AddInternalCharacter = function(_character, _x, _y, _line, _width)
     {
-        var _array = array_create(COOLTOOL_CHARACTER.__SIZE);
-        _array[@ COOLTOOL_CHARACTER.CHAR ] = _character;
-        _array[@ COOLTOOL_CHARACTER.X    ] = _x;
-        _array[@ COOLTOOL_CHARACTER.Y    ] = _y;
-        _array[@ COOLTOOL_CHARACTER.LINE ] = _line;
-        _array[@ COOLTOOL_CHARACTER.WIDTH] = _width;
-        __character_array[@ array_length(__character_array)] = _array;
-        return _array;
+        var _struct = {
+            __char:  _character,
+            __x:     _x,
+            __y:     _y,
+            __line:  _line,
+            __width: _width,
+        };
+        
+        array_push(__characterArray, _struct);
+        
+        return _struct;
     }
     
     static __FocusOnCursor = function()
     {
-        var _cursor_l = 0;
-        var _cursor_t = 0;
-        var _cursor_r = 0;
-        var _cursor_b = __line_height;
+        var _cursorL = 0;
+        var _cursorT = 0;
+        var _cursorR = 0;
+        var _cursorB = __lineHeight;
         
-        if ((__cursor_pos >= 0) && (__cursor_pos < array_length(__character_array)))
+        if ((__cursorPos >= 0) && (__cursorPos < array_length(__characterArray)))
         {
-            var _char_array = __character_array[__cursor_pos];
-            var _width = _char_array[COOLTOOL_CHARACTER.WIDTH];
+            var _charStruct = __characterArray[__cursorPos];
+            var _width = _charStruct.__width;
             if (_width > 100) _width = 0;
             
-            var _cursor_l = _char_array[COOLTOOL_CHARACTER.X];
-            var _cursor_t = _char_array[COOLTOOL_CHARACTER.Y];
-            var _cursor_r = _width + _cursor_l;
-            var _cursor_b = _cursor_t + __line_height;
+            var _cursorL = _charStruct.__x;
+            var _cursorT = _charStruct.__y;
+            var _cursorR = _width + _cursorL;
+            var _cursorB = _cursorT + __lineHeight;
         }
         
-        var _window_l = __scroll_x;
-        var _window_t = __scroll_y;
-        var _window_r = _window_l + __width;
-        var _window_b = _window_t + __height;
+        var _windowL = __scrollX;
+        var _windowT = __scrollY;
+        var _windowR = _windowL+ __width;
+        var _windowB = _windowT + __height;
         
-        if (!rectangle_in_rectangle(_cursor_l, _cursor_t, _cursor_r, _cursor_b,
-                                    _window_l + 3, _window_t + 3, _window_r - 3, _window_b - 3))
+        if (!rectangle_in_rectangle(_cursorL, _cursorT, _cursorR, _cursorB,
+                                    _windowL + 3, _windowT + 3, _windowR - 3, _windowB - 3))
         {
-            __scroll_x -= max(0, _window_l - _cursor_l);
-            __scroll_y -= max(0, _window_t - _cursor_t);
-            __scroll_x += max(0, _cursor_r - _window_r);
-            __scroll_y += max(0, _cursor_b - _window_b);
+            __scrollX -= max(0, _windowL - _cursorL);
+            __scrollY -= max(0, _windowT - _cursorT);
+            __scrollX += max(0, _cursorR - _windowR);
+            __scrollY += max(0, _cursorB - _windowB);
     
-            __scroll_x = clamp(__scroll_x, 0, max(0, __content_width  - __width ));
-            __scroll_y = clamp(__scroll_y, 0, max(0, __content_height - __height));
+            __scrollX = clamp(__scrollX, 0, max(0, __contentWidth  - __width ));
+            __scrollY = clamp(__scrollY, 0, max(0, __contentHeight - __height));
         }
         
-        if (script_exists(__focus_on_cursor_callback)) script_execute(__focus_on_cursor_callback);
+        if (script_exists(__focusOnCursorCallback)) script_execute(__focusOnCursorCallback);
     }
     
-    static __GetCharacterAt = function(_point_x, _point_y)
+    static __GetCharacterAt = function(_pointX, _pointY)
     {
-        if (_point_y < 0) return 0;
-        if (_point_y > __content_height) return (array_length(__character_array) - 1);
+        if (_pointY < 0) return 0;
+        if (_pointY > __contentHeight) return (array_length(__characterArray) - 1);
         
         var _i = 0;
-        repeat(array_length(__character_array))
+        repeat(array_length(__characterArray))
         {
-            var _char_array = __character_array[_i];
+            var _charStruct = __characterArray[_i];
             
-            if (is_array(_char_array))
+            if (is_struct(_charStruct))
             {
-                var _x     = _char_array[COOLTOOL_CHARACTER.X    ];
-                var _y     = _char_array[COOLTOOL_CHARACTER.Y    ];
-                var _width = _char_array[COOLTOOL_CHARACTER.WIDTH];
+                var _x     = _charStruct.__x;
+                var _y     = _charStruct.__y;
+                var _width = _charStruct.__width;
                 
-                if (point_in_rectangle(_point_x, _point_y, _x, _y, _x + _width, _y + __line_height))
+                if (point_in_rectangle(_pointX, _pointY, _x, _y, _x + _width, _y + __lineHeight))
                 {
                     return _i;
                 }
@@ -614,11 +636,11 @@ function Textbox(_font, _width, _height) constructor
         __content = string_replace_all(__content, chr(10) + chr(13), chr(13));
         __content = string_replace_all(__content, chr(13) + chr(10), chr(13));
 
-        __content_width  = 0;
-        __content_height = 0;
+        __contentWidth  = 0;
+        __contentHeight = 0;
 
         var _length = string_length(__content);
-        __character_array = array_create(0);
+        __characterArray = array_create(0);
 
         var _x    = 0;
         var _y    = 0;
@@ -634,7 +656,7 @@ function Textbox(_font, _width, _height) constructor
                 __AddInternalCharacter(_char, _x, _y, _line, 9999);
                 
                 _x  = 0;
-                _y += __line_height;
+                _y += __lineHeight;
                 ++_line;
             }
             else if (_ord >= 32)
@@ -643,7 +665,7 @@ function Textbox(_font, _width, _height) constructor
                 __AddInternalCharacter(_char, _x, _y, _line, _width);
                 
                 _x += _width;
-                __content_width = max(__content_width, _x);
+                __contentWidth = max(__contentWidth, _x);
             }
             
             ++_c;
@@ -651,31 +673,31 @@ function Textbox(_font, _width, _height) constructor
         
         __AddInternalCharacter("", _x, _y, _line, 9999);
         
-        __content_height = _y + __line_height;
-        __cursor_pos = clamp(__cursor_pos, -1, array_length(__character_array) - 1);
+        __contentHeight = _y + __lineHeight;
+        __cursorPos = clamp(__cursorPos, -1, array_length(__characterArray) - 1);
         
         draw_set_font(-1);
         
-        if (script_exists(__update_callback)) script_execute(__update_callback);
+        if (script_exists(__updateCallback)) script_execute(__updateCallback);
     }
     
-    static __SetWindow = function(_l, _t, _r, _b, _fog_colour = undefined)
+    static __SetWindow = function(_l, _t, _r, _b, _fogColour = undefined)
     {
-        static _textboxShader_u_vWindow    = shader_get_uniform(__textboxShader, "u_vWindow");
-        static _textboxShader_u_vFogColour = shader_get_uniform(__textboxShader, "u_vFogColour");
+        var _textboxShader_u_vWindow    = shader_get_uniform(__textboxShader, "u_vWindow");
+        var _textboxShader_u_vFogColour = shader_get_uniform(__textboxShader, "u_vFogColour");
         
         shader_set(__textboxShader);
         shader_set_uniform_f(_textboxShader_u_vWindow, _l, _t, _r, _b);
         
-        if (_fog_colour == undefined)
+        if (_fogColour == undefined)
         {
             shader_set_uniform_f(_textboxShader_u_vFogColour, 0.0, 0.0, 0.0, 0.0);
         }
         else
         {
-            var _red   = colour_get_red(  _fog_colour)/255;
-            var _green = colour_get_green(_fog_colour)/255;
-            var _blue  = colour_get_blue( _fog_colour)/255;
+            var _red   = colour_get_red(  _fogColour)/255;
+            var _green = colour_get_green(_fogColour)/255;
+            var _blue  = colour_get_blue( _fogColour)/255;
             shader_set_uniform_f(_textboxShader_u_vFogColour,_red, _green, _blue, 1.0);
         }
     }
