@@ -1,7 +1,6 @@
 /// @param font
 /// @param width
 /// @param height
-/// @param [hashNewline=false]
 
 #macro TEXTBOX_REPEAT_DELAY      450
 #macro TEXTBOX_REPEAT_FREQUENCY   60
