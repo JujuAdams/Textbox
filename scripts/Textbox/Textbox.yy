@@ -1,11 +1,11 @@
 {
   "resourceType": "GMScript",
   "resourceVersion": "1.0",
-  "name": "ctool_vertex_buffer_add_rect",
+  "name": "Textbox",
   "isDnD": false,
   "isCompatibility": false,
   "parent": {
-    "name": "textbox",
-    "path": "textbox.yyp",
+    "name": "Textbox",
+    "path": "folders/Textbox.yy",
   },
 }

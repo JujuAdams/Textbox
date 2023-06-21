@@ -1,1 +1,1 @@
-ctool_textbox_draw(x, y);
+textbox.Draw(x, y);

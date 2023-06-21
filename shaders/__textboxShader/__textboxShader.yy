@@ -1,10 +1,10 @@
 {
   "resourceType": "GMShader",
   "resourceVersion": "1.0",
-  "name": "shd_ctool_window",
+  "name": "__textboxShader",
   "type": 1,
   "parent": {
-    "name": "textbox",
-    "path": "textbox.yyp",
+    "name": "Textbox",
+    "path": "folders/Textbox.yy",
   },
 }

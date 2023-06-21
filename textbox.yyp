@@ -3,21 +3,11 @@
   "resourceVersion": "1.6",
   "name": "textbox",
   "resources": [
-    {"id":{"name":"ctool_textbox_add_internal_character","path":"scripts/ctool_textbox_add_internal_character/ctool_textbox_add_internal_character.yy",},"order":4,},
     {"id":{"name":"oTest","path":"objects/oTest/oTest.yy",},"order":3,},
-    {"id":{"name":"ctool_textbox_update","path":"scripts/ctool_textbox_update/ctool_textbox_update.yy",},"order":12,},
-    {"id":{"name":"ctool_vertex_buffer_add_rect","path":"scripts/ctool_vertex_buffer_add_rect/ctool_vertex_buffer_add_rect.yy",},"order":16,},
-    {"id":{"name":"sWhitePixel","path":"sprites/sWhitePixel/sWhitePixel.yy",},"order":13,},
-    {"id":{"name":"ctool_textbox_get_line_data","path":"scripts/ctool_textbox_get_line_data/ctool_textbox_get_line_data.yy",},"order":8,},
-    {"id":{"name":"ctool_set_window","path":"scripts/ctool_set_window/ctool_set_window.yy",},"order":14,},
-    {"id":{"name":"shd_ctool_window","path":"shaders/shd_ctool_window/shd_ctool_window.yy",},"order":15,},
-    {"id":{"name":"ctool_textbox_step","path":"scripts/ctool_textbox_step/ctool_textbox_step.yy",},"order":11,},
+    {"id":{"name":"__textboxWhitePixel","path":"sprites/__textboxWhitePixel/__textboxWhitePixel.yy",},"order":10,},
+    {"id":{"name":"Textbox","path":"scripts/Textbox/Textbox.yy",},"order":0,},
+    {"id":{"name":"__textboxShader","path":"shaders/__textboxShader/__textboxShader.yy",},"order":12,},
     {"id":{"name":"fntConsolas","path":"fonts/fntConsolas/fntConsolas.yy",},"order":2,},
-    {"id":{"name":"ctool_textbox_draw","path":"scripts/ctool_textbox_draw/ctool_textbox_draw.yy",},"order":5,},
-    {"id":{"name":"ctool_textbox_insert_string","path":"scripts/ctool_textbox_insert_string/ctool_textbox_insert_string.yy",},"order":10,},
-    {"id":{"name":"ctool_textbox_get_character_at","path":"scripts/ctool_textbox_get_character_at/ctool_textbox_get_character_at.yy",},"order":7,},
-    {"id":{"name":"ctool_textbox_init","path":"scripts/ctool_textbox_init/ctool_textbox_init.yy",},"order":9,},
-    {"id":{"name":"ctool_textbox_focus_on_cursor","path":"scripts/ctool_textbox_focus_on_cursor/ctool_textbox_focus_on_cursor.yy",},"order":6,},
     {"id":{"name":"rMain","path":"rooms/rMain/rMain.yy",},"order":1,},
   ],
   "Options": [
@@ -42,7 +32,9 @@
   "RoomOrderNodes": [
     {"roomId":{"name":"rMain","path":"rooms/rMain/rMain.yy",},},
   ],
-  "Folders": [],
+  "Folders": [
+    {"resourceType":"GMFolder","resourceVersion":"1.0","name":"Textbox","folderPath":"folders/Textbox.yy","order":18,},
+  ],
   "AudioGroups": [
     {"resourceType":"GMAudioGroup","resourceVersion":"1.3","name":"audiogroup_default","targets":-1,},
   ],
