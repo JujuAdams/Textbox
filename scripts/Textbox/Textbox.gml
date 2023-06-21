@@ -44,6 +44,7 @@ function Textbox(_font, _width, _height) constructor
     __cursorPos      = -1;
     __highlightStart = -1;
     __highlightEnd   = -1;
+    __canType        = true;
     
     __mouseOver     = false;
     __mousePressed  = false;
@@ -76,9 +77,22 @@ function Textbox(_font, _width, _height) constructor
         if (_update) __Update();
     }
     
+    static GetCanType = function()
+    {
+        return __canType;
+    }
+    
+    static SetCanType = function(_state)
+    {
+        __canType = _state;
+    }
+    
     static Unfocus = function()
     {
         __cursorPos = -1;
+        
+        __highlightStart =  9999;
+        __highlightEnd   = -9999;
     }
     
     static InsertString = function(_string, _position = __cursorPos+1, _update = true)
@@ -135,8 +149,10 @@ function Textbox(_font, _width, _height) constructor
             {
                 __mousePressed = true;
                 __mouseDown = true;
-        
-                //TODO - Unfocus all other textboxes
+            }
+            else if (!__mouseOver)
+            {
+                Unfocus();
             }
         }
         else
@@ -281,11 +297,11 @@ function Textbox(_font, _width, _height) constructor
                     }
                 }
             }
-    
+            
             if (!_commandShortcut)
             {
                 var _highlightSize = __highlightEnd - __highlightStart;
-                if (_overwriteHighlight)
+                if (__canType && _overwriteHighlight)
                 {
                     if ((__highlightStart >= 0) && (__highlightEnd < array_length(__characterArray)) && (_highlightSize > 0))
                     {
@@ -300,7 +316,7 @@ function Textbox(_font, _width, _height) constructor
                     }
                 }
         
-                if (keyboard_check(vk_control) && (__keyHeld != _keyboardKey))
+                if (__canType && keyboard_check(vk_control) && (__keyHeld != _keyboardKey))
                 {
                     if (keyboard_check_pressed(ord("V"))) //ctrl+v pastes text
                     {
@@ -321,9 +337,12 @@ function Textbox(_font, _width, _height) constructor
                     switch(_keyboardKey)
                     {
                         case vk_enter:
-                            __content = string_insert(chr(13), __content, __cursorPos + 1);
-                            ++__cursorPos;
-                            _update = true;
+                            if (__canType)
+                            {
+                                __content = string_insert(chr(13), __content, __cursorPos + 1);
+                                ++__cursorPos;
+                                _update = true;
+                            }
                         break;
                 
                         case vk_up:
@@ -397,23 +416,32 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         case vk_backspace:
-                            __content = string_delete(__content, __cursorPos, 1);
-                            __cursorPos = max(0, __cursorPos - 1);
-                            _update = true;
+                            if (__canType)
+                            {
+                                __content = string_delete(__content, __cursorPos, 1);
+                                __cursorPos = max(0, __cursorPos - 1);
+                                _update = true;
+                            }
                         break;
                 
                         case vk_delete:
-                            __content = string_delete(__content, __cursorPos + 1, 1);
-                            _update = true;
+                            if (__canType)
+                            {
+                                __content = string_delete(__content, __cursorPos + 1, 1);
+                                _update = true;
+                            }
                         break;
                 
                         default:
-                            var _lastChar = keyboard_lastchar;
-                            if (_lastChar == chr(8230)) _lastChar = "..."; //Ellipsis replacement
-                    
-                            __content = string_insert(keyboard_lastchar, __content, __cursorPos + 1);
-                            ++__cursorPos;
-                            _update = true;
+                            if (__canType)
+                            {
+                                var _lastChar = keyboard_lastchar;
+                                if (_lastChar == chr(8230)) _lastChar = "..."; //Ellipsis replacement
+                                
+                                __content = string_insert(keyboard_lastchar, __content, __cursorPos + 1);
+                                ++__cursorPos;
+                                _update = true;
+                            }
                         break;
                     }
                 }

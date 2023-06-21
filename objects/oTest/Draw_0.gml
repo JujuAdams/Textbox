@@ -1,1 +1,1 @@
-textbox.Draw(x, y);
+outputBox.Draw(x, y);
