@@ -1,0 +1,1 @@
+ctool_textbox_draw(x, y);
