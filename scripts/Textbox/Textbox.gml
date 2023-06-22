@@ -4,6 +4,7 @@
 
 #macro TEXTBOX_REPEAT_DELAY      450
 #macro TEXTBOX_REPEAT_FREQUENCY   60
+#macro TEXTBOX_BLINK_FREQUENCY   500
 
 function Textbox(_font, _width, _height) constructor
 {
@@ -42,6 +43,7 @@ function Textbox(_font, _width, _height) constructor
     __focusOnCursorCallback = -1;
     
     __focus          = false;
+    __focusedTime    = -1;
     __cursorPos      = -1;
     __highlightStart = -1;
     __highlightEnd   = -1;
@@ -592,7 +594,10 @@ function Textbox(_font, _width, _height) constructor
                 }
                 else
                 {
-                    if ((__cursorPos == _i) && __focus) __VertexBufferAddRect(_vbuff, _charX - 1, _charY, _charX, _charY + __lineHeight, __colourText, 1.0);
+                    if ((__cursorPos == _i) && __focus && ((current_time - __focusedTime)/TEXTBOX_BLINK_FREQUENCY & 1))
+                    {
+                        __VertexBufferAddRect(_vbuff, _charX - 1, _charY, _charX, _charY + __lineHeight, __colourText, 1.0);
+                    }
                     
                     if (_charLine < array_length(__lineColourArray))
                     {
@@ -650,6 +655,7 @@ function Textbox(_font, _width, _height) constructor
         var _cursorB = __lineHeight;
         
         __focus = true;
+        __focusedTime = current_time;
         
         if ((__cursorPos >= 0) && (__cursorPos < array_length(__characterArray)))
         {
