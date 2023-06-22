@@ -60,9 +60,12 @@ function Textbox(_font, _width, _height) constructor
     __keyPressedTime = -1;
     __backspace       = false;
     
+    __keyboardStringPrevious = "";
+    
+    var _fontPrevious = draw_get_font();
     draw_set_font(__font);
     __lineHeight = string_height(chr(13));
-    draw_set_font(-1);
+    draw_set_font(_fontPrevious);
     
     __Update();
     
@@ -486,13 +489,18 @@ function Textbox(_font, _width, _height) constructor
                         break;
                 
                         default:
-                            if (__canType)
+                            if (__canType && (string_length(keyboard_lastchar) > 0))
                             {
-                                var _lastChar = keyboard_lastchar;
-                                if (_lastChar == chr(8230)) _lastChar = "..."; //Ellipsis replacement
+                                var _insertionPoint = 0;
+                                repeat(string_length(__keyboardStringPrevious))
+                                {
+                                    if (string_char_at(__keyboardStringPrevious, _insertionPoint) != string_char_at(keyboard_string, _insertionPoint)) break;
+                                    ++_insertionPoint;
+                                }
                                 
-                                __content = string_insert(keyboard_lastchar, __content, __cursorPos + 1);
-                                ++__cursorPos;
+                                var _insertion = string_copy(keyboard_string, _insertionPoint + 1, string_length(keyboard_string) - _insertionPoint);
+                                __content = string_insert(_insertion, __content, __cursorPos + 1);
+                                __cursorPos += string_length(_insertion);
                                 _update = true;
                             }
                         break;
@@ -506,6 +514,8 @@ function Textbox(_font, _width, _height) constructor
 
         if (_update) __Update();
         if (_oldCursorPos != __cursorPos) __FocusOnCursor();
+        
+        __keyboardStringPrevious = keyboard_string;
     }
     
     static Draw = function(_x, _y)
@@ -556,6 +566,8 @@ function Textbox(_font, _width, _height) constructor
                                                  matrix_build(-__scrollX, -__scrollY, 0,    0,0,0,   1,1,1)));
         
         draw_set_colour(__colourText);
+        
+        var _fontPrevious = draw_get_font();
         draw_set_font(__font);
         __SetWindow(_x-1, _y, _x + __width, _y + __height);
         
@@ -616,7 +628,7 @@ function Textbox(_font, _width, _height) constructor
         
         //draw_rectangle(0, 0, __contentWidth, __contentHeight, true);
         matrix_set(matrix_world, matrix_build_identity());
-        draw_set_font(-1);
+        draw_set_font(_fontPrevious);
         draw_set_color(c_white);
         shader_reset();
     }
@@ -713,6 +725,7 @@ function Textbox(_font, _width, _height) constructor
     
     static __Update = function()
     {
+        var _fontPrevious = draw_get_font();
         draw_set_font(__font);
 
         __content = string_replace_all(__content, chr(10) + chr(13), chr(13));
@@ -758,7 +771,7 @@ function Textbox(_font, _width, _height) constructor
         __contentHeight = _y + __lineHeight;
         __cursorPos = clamp(__cursorPos, -1, array_length(__characterArray) - 1);
         
-        draw_set_font(-1);
+        draw_set_font(_fontPrevious);
         
         if (script_exists(__updateCallback)) script_execute(__updateCallback);
     }
